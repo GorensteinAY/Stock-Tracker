@@ -169,3 +169,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# AWS credentials
+.aws/credentials
+
+# Python bytecode
+*.pyc
+
+# Virtual environment
+venv/
