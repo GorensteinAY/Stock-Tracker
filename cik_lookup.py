@@ -1,46 +1,40 @@
 import requests
 import pandas as pd
+import time
+import re  # To clean company names
 
-from bs4 import BeautifulSoup
+SEC_API_BASE_URL = "https://www.sec.gov/files/company_tickers.json"
+HEADERS = {"User-Agent":"agorenst@tepper.cmu.edu"}  # Replace with your contact info
 
-headers = {"User-Agent":"agorenst@tepper.cmu.edu"}
+# Load SEC ticker & company name data
+def load_sec_ticker_data():
+    try:
+        response = requests.get(SEC_API_BASE_URL, headers=HEADERS)
+        response.raise_for_status()
+        sec_data = response.json()
 
-def get_cik_from_ticker(ticker: str) -> str:
-    
-    ticker = ticker.upper().replace(".","-")
-    url = f"https://www.sec.gov/files/company_tickers.json"
-
-    ticker_json = requests.get(url,headers=headers).json()
-
-    for company in ticker_json.values():
-        if company["ticker"] == ticker:
-            cik = str(company["cik_str"]).zfill(10)
-            return cik
-    raise ValueError(f"Ticker {ticker} not found in SEC database")
-
-"""
-    ticker_json = requests.get("https://www.sec.gov/files/company_tickers.json",headers=headers).json()
-    # SEC EDGAR URL for company search (will search by ticker)
-    url = f"https://www.sec.gov/cgi-bin/browse-edgar?CIK={ticker}&owner=include&action=getcompany"
-    
-    # Send GET request to the SEC search page
-    response = requests.get(url, headers={"User-Agent": "Russell2000Lookup/1.0 (gorenstein.alexander@gmail.com)"})
-    
-    if response.status_code == 200:
-        # Parse the HTML page
-        soup = BeautifulSoup(response.text, 'html.parser')
+        cik_mapping = {str(entry["ticker"]).upper(): str(entry["cik_str"]).zfill(10) for entry in sec_data.values()}
+        name_mapping = {clean_company_name(entry["title"]): str(entry["cik_str"]).zfill(10) for entry in sec_data.values()}
         
-        # Look for the CIK number on the page
-        cik_tag = soup.find('div', {'class': 'companyName'})
-        if cik_tag:
-            # The CIK is typically listed as a number in the company name section
-            cik = cik_tag.get_text().split("CIK#")[-1].strip()
-            return cik
-        else:
-            print(f"CIK not found for {ticker}")
-            return None
-    else:
-        print(f"Error fetching CIK for {ticker}")
-        return None
+        return cik_mapping, name_mapping
+    except requests.RequestException as e:
+        print(f"Error fetching SEC data: {e}")
+        return {}, {}
 
-"""
+# Normalize company names for better matching
+def clean_company_name(name):
+    if not isinstance(name, str):  # Ensure it's a string before processing
+        return ""
+    
+    name = name.strip().upper()  # Remove extra spaces & ensure uppercase
+    name = re.sub(r"[^\w\s]", "", name)  # Remove special characters
+    name = re.sub(r"\s+", " ", name)  # Ensure single spaces between words
+    return name
+
+# Function to find CIK based on ticker
+def get_cik_by_ticker(ticker, cik_mapping):
+    return cik_mapping.get(str(ticker).upper(), None)
+
+# Function to find CIK based on cleaned company name
+def get_cik_by_company_name(company_name, name_mapping):
+    return name_mapping.get(clean_company_name(company_name), None)
