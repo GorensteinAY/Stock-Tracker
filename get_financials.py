@@ -29,16 +29,10 @@ def get_latest_financials(cik):
 
         return {
             "Revenue": revenue,
-            "Net Income": net_income,
-            "Cash Flow": cash_flow
+            "Net_Income": net_income,
+            "Cash_Flow": cash_flow
         }
 
     except KeyError:
         print(f"⚠️ Missing financial data for CIK {cik}")
         return None
-
-
-# Example Usage
-cik = "0000003197"  # Example CIK for CECO
-financials = get_latest_financials(cik)
-print(financials)

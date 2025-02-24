@@ -3,7 +3,9 @@
 
 import boto3
 import time
+import logging
 from decimal import Decimal
+from cik_lookup import *
 from get_financials import get_latest_financials 
 
 # AWS Config
@@ -13,8 +15,64 @@ DYNAMODB_TABLE = "StockTickers"
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(DYNAMODB_TABLE)
 
+def update_financials_by_ticker(ticker):
+    """
+    Fetch CIK using the ticker, retrieve financials, and update DynamoDB.
+
+    Args:
+        ticker (str): The stock ticker of the company.
+    """
+    cik_mapping, name_mapping = load_sec_ticker_data()
+
+    try:
+        # Look up CIK from ticker
+        cik = get_cik_by_ticker(ticker, cik_mapping)
+
+        if not cik:
+            logging.warning(f"⚠️ No CIK found for ticker {ticker}. Skipping update.")
+            return
+
+        # Fetch financials using CIK
+        financials = get_latest_financials(cik)
+
+        if not financials:
+            logging.warning(f"⚠️ Missing financial data for CIK {cik} ({ticker})")
+            return
+        
+        # Convert to Decimal (ensuring negative values are kept)
+        financials_cleaned = {
+            k: Decimal(str(v)) for k, v in financials.items() if v is not None
+        }
+
+        # Log the update
+        logging.info(f"🔹 Updating {ticker} (CIK: {cik}) with: {financials_cleaned}")
+
+        # Prepare attribute names and values
+        update_expression = "SET " + ", ".join(f"#{k} = :{k}" for k in financials_cleaned)
+        expression_attribute_values = {f":{k}": v for k, v in financials_cleaned.items()}
+        expression_attribute_names = {f"#{k}": k for k in financials_cleaned}  # ✅ Uses underscores instead of spaces
+
+        # Perform the update
+        table.update_item(
+            Key={"Ticker": ticker},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
+            ExpressionAttributeNames=expression_attribute_names  # ✅ No spaces in keys now
+        )
+
+        logging.info(f"✅ Successfully updated financials for {ticker} (CIK {cik})")
+    
+    except Exception as e:
+        logging.error(f"❌ Error updating financials for {ticker}: {e}")
+
+# Run the update
+if __name__ == "__main__":
+    update_financials_by_ticker("GNE")
+
+"""
 def update_dynamodb():
-    """Loop through companies in DynamoDB and update their latest financials."""
+    # Loop through companies in DynamoDB and update their latest financials.
+    
     response = table.scan()
     companies = response.get("Items", [])
 
@@ -72,3 +130,5 @@ def update_dynamodb():
 # Run the update
 if __name__ == "__main__":
     update_dynamodb()
+
+"""
