@@ -34,10 +34,33 @@ def clean_dynamodb():
             deleted_count += 1
             print(f"🗑️ Deleted {ticker} (No CIK)")
 
-    print(f"✅ Done! Deleted {deleted_count} items.")
+    print(f"✅ Deleted {deleted_count} items.")
+
+def delete_column(column):
+    """Delete a column from DynamoDB"""
+
+    # Scan the table to get all items
+    response = table.scan()
+    items = response.get("Items", [])
+
+    # Loop through items and remove the column
+    for item in items:
+        primary_key = {"Ticker": item["Ticker"]}  # Update this key structure based on your table schema
+
+        # Remove the erroneous column
+        table.update_item(
+            Key=primary_key,
+            UpdateExpression=f"REMOVE {column}"
+        )
+
+    print("✅ Deleted {column} from DynamoDB")    
+
+def delete_row(ticker):
+    response = table.delete_item(
+        Key={"Ticker": ticker}  # Assuming "Ticker" is the primary key
+    )
+    print(f"✅ Deleted {ticker} from DynamoDB")
 
 # Example usage (if running locally)
 if __name__ == "__main__":
-    insert_ticker("AAPL")
-    insert_ticker("TSLA")
-    print("All tickers:", get_all_tickers())
+    get_all_tickers()
