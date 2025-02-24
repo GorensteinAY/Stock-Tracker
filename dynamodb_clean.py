@@ -1,5 +1,7 @@
 # Clean DynamoDB
 
+"""Function moved to script dynamodb_utils.py"""
+
 import boto3
 
 # AWS Configuration

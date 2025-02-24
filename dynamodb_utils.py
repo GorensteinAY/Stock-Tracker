@@ -20,6 +20,22 @@ def get_all_tickers():
     response = table.scan()
     return response.get('Items', [])
 
+def clean_dynamodb():
+    """Scan the table and delete items where 'CIK' is missing or empty"""
+    response = table.scan()
+    items = response.get("Items", [])
+
+    deleted_count = 0
+
+    for item in items:
+        if "CIK" not in item or not item["CIK"]:  # Check if CIK is missing or empty
+            ticker = item["Ticker"]
+            table.delete_item(Key={"Ticker": ticker})
+            deleted_count += 1
+            print(f"🗑️ Deleted {ticker} (No CIK)")
+
+    print(f"✅ Done! Deleted {deleted_count} items.")
+
 # Example usage (if running locally)
 if __name__ == "__main__":
     insert_ticker("AAPL")
