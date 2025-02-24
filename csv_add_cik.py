@@ -1,4 +1,4 @@
-# add_ciks_to_csv.py
+# Add CIK to CSV list of tickers
 
 import time
 import pandas as pd

@@ -1,6 +1,5 @@
 import requests
 import pandas as pd
-import time
 import re  # To clean company names
 
 SEC_API_BASE_URL = "https://www.sec.gov/files/company_tickers.json"
