@@ -1,62 +1,52 @@
 import boto3
-import pandas as pd
-from decimal import Decimal, InvalidOperation
+import csv
+import time
+from decimal import Decimal
 
-# DynamoDB setup
-dynamodb = boto3.resource("dynamodb")
-table_name = "StockTickers"  # Replace with your actual table name
-table = dynamodb.Table(table_name)
+# AWS Configuration
+AWS_REGION = "us-east-1"  # Change this to your region
+DYNAMODB_TABLE_NAME = "StockTickers"  # Change to your actual table name
 
-# Load CSV data (with semicolon delimiter)
-csv_file = "tickers.csv"  # Ensure this is in the same directory
-df = pd.read_csv(csv_file, delimiter=';')
+# Initialize DynamoDB
+dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
-# Clean the column names (strip any spaces)
-df.columns = df.columns.str.strip()
+# Function to upload CSV to DynamoDB
+def upload_csv_to_dynamodb(csv_file):
+    with open(csv_file, "r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file, delimiter=";")  # Ensure delimiter is correct
+        total_uploaded = 0
 
-# Insert each row into DynamoDB
-def upload_tickers():
-    for _, row in df.iterrows():
-        # Ensure the company name is a string (even if it's a float, NaN, etc.)
-        company_name = str(row["CompanyName"]).title()  # Convert to string and capitalize each word
-        
-        # Check if ticker contains only letters (alphabetic characters)
-        ticker = row["Ticker"]
-        if not ticker.isalpha():
-            print(f"❌ Invalid Ticker (not alphabetic): {ticker}, skipping...")
-            continue  # Skip this row if ticker is not alphabetic
+        for row in reader:
+            try:
+                # Convert CIK to a string, ensuring no float conversion issues
+                cik = str(row["CIK"]).strip() if row.get("CIK") else None
+                ticker = row["Ticker"].strip().upper() if row.get("Ticker") else None
+                company_name = row["CompanyName"].strip() if row.get("CompanyName") else None
 
-        try:
-            # Ensure ticker is treated as a string (not as a Decimal)
-            ticker = str(ticker).upper()  # Store ticker as a string and convert to uppercase
+                if not ticker or not cik:
+                    print(f"Skipping row: Missing Ticker or CIK → {row}")
+                    continue  # Skip rows without essential data
 
-        except InvalidOperation:
-            print(f"❌ Invalid Ticker: {ticker}, skipping...")
-            continue  # Skip this row if ticker is invalid
-        
-        # Check if the ticker already exists in the table
-        response = table.get_item(
-            Key={
-                'Ticker': ticker  # Check for existing Ticker
-            }
-        )
+                # Insert into DynamoDB
+                table.put_item(
+                    Item={
+                        "Ticker": ticker,
+                        "CIK": cik,
+                        "CompanyName": company_name,
+                    }
+                )
 
-        # If the ticker already exists, skip this insert
-        if 'Item' in response:
-            print(f"✅ Ticker {ticker} already exists. Skipping insert.")
-            continue
+                total_uploaded += 1
+                print(f"✅ Uploaded {ticker} | CIK: {cik}")
 
-        # Insert into DynamoDB only if the ticker does not exist
-        response = table.put_item(
-            Item={
-                "Ticker": ticker,  # Ticker is stored as a string
-                "CompanyName": company_name
-            }
-        )
-        print(f"Uploaded: {ticker} - {company_name}")
+                time.sleep(0.1)  # Optional: Throttle requests to prevent overload
 
-    print("✅ Upload complete!")
+            except Exception as e:
+                print(f"❌ Error uploading row {row}: {e}")
+
+    print(f"✅ Upload complete: {total_uploaded} records added to DynamoDB.")
 
 # Run the function
-if __name__ == "__main__":
-    upload_tickers()
+csv_filename = "Updated_Tickers.csv"  # Update with your actual CSV filename
+upload_csv_to_dynamodb(csv_filename)
