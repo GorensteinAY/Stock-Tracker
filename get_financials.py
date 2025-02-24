@@ -22,17 +22,26 @@ def get_latest_financials(cik):
     data = response.json()
     
     try:
-        # Extract financials
-        revenue = data["facts"]["us-gaap"]["Revenues"]["units"]["USD"][-1]["val"]
-        net_income = data["facts"]["us-gaap"]["NetIncomeLoss"]["units"]["USD"][-1]["val"]
-        cash_flow = data["facts"]["us-gaap"]["NetCashProvidedByUsedInOperatingActivities"]["units"]["USD"][-1]["val"]
+        
+        # Check if financial data exists before accessing it
+        revenue = data["facts"]["us-gaap"].get("Revenues", {}).get("units", {}).get("USD", [])
+        net_income = data["facts"]["us-gaap"].get("NetIncomeLoss", {}).get("units", {}).get("USD", [])
+        net_cash = data["facts"]["us-gaap"].get("NetCashProvidedByUsedInOperatingActivities", {}).get("units", {}).get("USD", [])
 
-        return {
-            "Revenue": revenue,
-            "Net_Income": net_income,
-            "Cash_Flow": cash_flow
-        }
+        # Extract latest values if available
+        revenue_val = revenue[-1]["val"] if revenue else None
+        net_income_val = net_income[-1]["val"] if net_income else None
+        net_cash_val = net_cash[-1]["val"] if net_cash else None
 
-    except KeyError:
-        print(f"⚠️ Missing financial data for CIK {cik}")
+        # If all values are None, return None to indicate missing data
+        if revenue_val is None and net_income_val is None and net_cash_val is None:
+            return None
+
+
+        return {"Revenue": revenue_val, 
+                "Net_Income": net_income_val, 
+                "Net_Cash": net_cash_val}
+
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Error fetching data for CIK {cik}: {e}")
         return None

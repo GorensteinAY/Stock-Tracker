@@ -2,6 +2,7 @@
 
 """Function moved to script dynamodb_utils.py"""
 
+"""
 import boto3
 
 # AWS Configuration
@@ -30,3 +31,5 @@ def clean_dynamodb():
 
 # Run the cleanup script
 clean_dynamodb()
+
+"""

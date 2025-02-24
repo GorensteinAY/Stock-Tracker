@@ -20,7 +20,7 @@ def get_all_tickers():
     response = table.scan()
     return response.get('Items', [])
 
-def clean_dynamodb():
+def clean():
     """Scan the table and delete items where 'CIK' is missing or empty"""
     response = table.scan()
     items = response.get("Items", [])
@@ -63,4 +63,4 @@ def delete_row(ticker):
 
 # Example usage (if running locally)
 if __name__ == "__main__":
-    get_all_tickers()
+    delete_column("Cash_Flow")

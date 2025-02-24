@@ -1,6 +1,5 @@
 # Update list of companies stored in DynamoDB with latest financials from SEC EDGAR database
 
-
 import boto3
 import time
 import logging
@@ -68,7 +67,7 @@ def update_dynamodb():
     for company in companies:
         update_financials(ticker = company["Ticker"])
 
-        time.sleep(1.1)  # Respect SEC rate limit
+        time.sleep(0.1)  # Respect SEC rate limit
 
 # Run the update
 if __name__ == "__main__":
