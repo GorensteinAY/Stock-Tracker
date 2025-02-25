@@ -53,8 +53,9 @@ def add_cik_to_csv(csv_file):
         print(f"Error processing the CSV: {e}")
 
 """
-# Run the function
-csv_filename = "Tickers.csv"  # Update with your file path
-add_cik_to_csv(csv_filename)
+# Run manually
+if __name__ == "__main__":
+    csv_filename = "Tickers.csv"  # Update with your file path
+    add_cik_to_csv(csv_filename)
 
 """

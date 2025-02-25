@@ -24,6 +24,9 @@ def get_cik_from_title(title: str) -> str:
     raise ValueError(f"Title {title} not found in SEC database")
 
 
+"""
+# Run manually
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         title = sys.argv[1]  # Pass the ticker from the command-line argument
@@ -34,3 +37,4 @@ if __name__ == "__main__":
             print(f"Could not find CIK for {title}")
     else:
         print("Please provide a company name.")
+"""

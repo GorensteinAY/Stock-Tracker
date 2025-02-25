@@ -10,6 +10,7 @@ class Test_TestCIKLookup(unittest.TestCase):
 
         self.assertEqual(cik_lookup.get_cik_from_ticker("APPL"),"0000320193") # Incorrect ticker for AAPL
 
-
+"""""
 if __name__ == '__main__':
     unittest.main()
+"""

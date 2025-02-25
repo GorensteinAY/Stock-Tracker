@@ -40,5 +40,8 @@ def upload_csv_to_dynamodb(csv_file):
     except Exception as e:
         logging.error(f"❌ Error processing CSV: {e}")
 
-# Example usage
-upload_csv_to_dynamodb("Updated_Tickers.csv")
+"""
+# Run manually
+if __name__ == "__main__":
+    upload_csv_to_dynamodb("Updated_Tickers.csv")
+"""
