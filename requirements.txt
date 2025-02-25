@@ -8,3 +8,4 @@ time
 decimal
 logging
 json
+yfinance

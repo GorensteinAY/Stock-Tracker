@@ -10,8 +10,9 @@ def lambda_handler(event, context):
     # Review Tickers.csv for any new tickers
     csv_add_cik.add_cik_to_csv("Tickers.csv")
 
-    # Look up CIK's and add to DynamoDB
+    # Look up CIK's and add to DynamoDB, clean table to remove tickers with no CIK
     dynamodb_csv.upload_csv_to_dynamodb("Updated_Tickers.csv")
+    dynamodb_utils.clean()
 
     # Update financials from SEC EDGAR database
     dynamodb_financials.update_dynamodb()
