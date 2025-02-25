@@ -1,47 +1,41 @@
 # Get stock price for given ticker
 
-import datetime
+from decimal import Decimal
 import yfinance as yf
+import logging
 
 def get_stock_price(ticker):
-    """A tool that fetches the latest stock price for a given ticker symbol from Yahoo Finance.
-    Args:
-        ticker: A string representing the stock ticker symbol (e.g., "AAPL" for Apple).
     """
-
-
-
+    Fetches the latest stock price using Yahoo Finance.
+    """
     try:
-        # Get the current time in EST (Eastern Time Zone)
-        current_time = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-6)))
-
-        # Market open and close times (EST)
-        market_open = current_time.replace(hour=9, minute=30, second=0, microsecond=0)
-        market_close = current_time.replace(hour=16, minute=0, second=0, microsecond=0)
-
         stock = yf.Ticker(ticker)
-        price = None
-        currency = stock.fast_info.get("currency", "USD")
-
-        # Check if the market is open
-        if market_open <= current_time <= market_close:
-            # Try to get live price
-            price = stock.fast_info.get("last_price")
-        else:
-            # Market is closed, use last closing price
-            hist = stock.history(period="1d")
-            if not hist.empty:
-                price = hist["Close"].iloc[-1]  # Last closing price
-
-        if price is None:
-            return "Price unavailable"
-
-        return f"{currency} {price:,.2f}"
-
+        price = stock.history(period="1d")["Close"].iloc[-1]  # Get latest closing price
+        rounded_price = round(price,2)
+        return Decimal(str(rounded_price))  # Convert to Decimal for DynamoDB
     except Exception as e:
-        return f"Error fetching price: {e}"
+        logging.error(f"❌ Error fetching stock price for {ticker}: {e}")
+        return None
     
+def get_market_cap(ticker):
+    """
+    Fetches the market capitalization using Yahoo Finance.
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        market_cap = stock.info.get("marketCap")  # Get market cap
+        
+        if market_cap is None:
+            logging.warning(f"⚠️ Market cap not found for {ticker}.")
+            return None
 
-    # Ensure the script still works when run manually
+        return Decimal(str(market_cap))  # Convert to Decimal for DynamoDB
+    
+    except Exception as e:
+        logging.error(f"❌ Error fetching market cap for {ticker}: {e}")
+        return None
+
+# Ensure the script still works when run manually
 if __name__ == "__main__":
     print(get_stock_price("TSLA"))
+    print(get_market_cap("TSLA"))

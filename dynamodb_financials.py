@@ -1,4 +1,6 @@
-# Update list of companies stored in DynamoDB with latest financials from SEC EDGAR database
+# Update list of companies stored in DynamoDB with latest financials
+# Revenue, Net Income, Net Cash taken from SEC EDGAR database
+# Stock price, Market cap taken from Yahoo Finance
 
 import boto3
 import time
@@ -6,6 +8,7 @@ import logging
 from decimal import Decimal
 from cik_lookup import *
 from get_financials import get_latest_financials 
+from get_price import *
 
 # AWS Config
 DYNAMODB_TABLE = "StockTickers"
@@ -24,7 +27,7 @@ def update_financials(ticker):
         cik = get_cik_by_ticker(ticker, cik_mapping)
 
         if not cik:
-            logging.warning(f"⚠️ No CIK found for ticker {ticker}. Skipping update.")
+            logging.info(f"⚠️ No CIK found for ticker {ticker}. Skipping update.")
             return
 
         # Fetch financials using CIK
@@ -52,10 +55,53 @@ def update_financials(ticker):
         )
 
         logging.info(f"✅ Successfully updated financials for {ticker} (CIK {cik})")
-        print(f"✅ Updated {ticker}: {financials}")
     
     except Exception as e:
         logging.error(f"❌ Error updating financials for {ticker}: {e}")
+
+def update_price(ticker):
+    """
+    Updates the stock price for a single ticker in DynamoDB.
+    """
+    price = get_stock_price(ticker)
+    
+    if price is None:
+        logging.info(f"⚠️ Skipping update for {ticker}: No valid price found.")
+        return False
+
+    try:
+        table.update_item(
+            Key={"Ticker": ticker},
+            UpdateExpression="SET Stock_Price = :p",
+            ExpressionAttributeValues={":p": price},
+        )
+        logging.info(f"✅ Updated {ticker} with price {price}")
+        return True
+    except Exception as e:
+        logging.error(f"❌ Error updating {ticker} in DynamoDB: {e}")
+        return False
+    
+def update_cap(ticker):
+    """
+    Updates the stock market capitalization for a single ticker in DynamoDB.
+    """
+    cap = get_market_cap(ticker)
+    
+    if cap is None:
+        logging.info(f"⚠️ Skipping update for {ticker}: No valid market cap found.")
+        return False
+
+    try:
+        table.update_item(
+            Key={"Ticker": ticker},
+            UpdateExpression="SET Stock_Market_Cap = :c",
+            ExpressionAttributeValues={":c": cap},
+        )
+        logging.info(f"✅ Updated {ticker} with market cap {cap}")
+        return True
+    except Exception as e:
+        logging.error(f"❌ Error updating {ticker} in DynamoDB: {e}")
+        return False
 
 
 def update_dynamodb():
@@ -66,6 +112,11 @@ def update_dynamodb():
 
     for company in companies:
         update_financials(ticker = company["Ticker"])
+        update_cap(ticker = company["Ticker"])
+        update_price(ticker = company["Ticker"])
 
-        time.sleep(0.1)  # Respect SEC rate limit
+        time.sleep(0.1)  # Respect rate limit
 
+# Ensure the script still works when run manually
+if __name__ == "__main__":
+    update_dynamodb()

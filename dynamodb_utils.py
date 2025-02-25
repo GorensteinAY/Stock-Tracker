@@ -1,4 +1,6 @@
 import boto3
+import logging
+from collections import Counter
 from config import DYNAMODB_TABLE_NAME, AWS_REGION
 
 # Initialize the DynamoDB resource
@@ -20,21 +22,76 @@ def get_all_tickers():
     response = table.scan()
     return response.get('Items', [])
 
-def clean():
-    """Scan the table and delete items where 'CIK' is missing or empty"""
-    response = table.scan()
-    items = response.get("Items", [])
+def clean_duplicates():
+    """Removes duplicate tickers, keeping only the first occurrence."""
+    try:
+        response = table.scan()
+        items = response.get("Items", [])
 
-    deleted_count = 0
+        if not items:
+            logging.info("✅ No items found in DynamoDB.")
+            return
 
-    for item in items:
-        if "CIK" not in item or not item["CIK"]:  # Check if CIK is missing or empty
-            ticker = item["Ticker"]
+        ticker_counts = Counter()
+        rows_to_delete = []
+
+        for item in items:
+            ticker = item.get("Ticker")
+            ticker_counts[ticker] += 1
+
+        for ticker, count in ticker_counts.items():
+            if count > 1:
+                duplicates = [item for item in items if item["Ticker"] == ticker]
+                # Keep the first one, delete the rest
+                rows_to_delete.extend([d["Ticker"] for d in duplicates[1:]])
+
+        for ticker in set(rows_to_delete):
             table.delete_item(Key={"Ticker": ticker})
-            deleted_count += 1
-            print(f"🗑️ Deleted {ticker} (No CIK)")
+            logging.info(f"🗑️ Deleted duplicate: {ticker}")
 
-    print(f"✅ Deleted {deleted_count} items.")
+        logging.info("✅ Duplicate removal complete.")
+
+    except Exception as e:
+        logging.error(f"❌ Error during duplicate clean-up: {e}")
+
+def clean_cik():
+    """Removes rows that have no CIK."""
+    try:
+        response = table.scan()
+        items = response.get("Items", [])
+
+        rows_to_delete = [item["Ticker"] for item in items if not item.get("CIK")]
+
+        for ticker in rows_to_delete:
+            table.delete_item(Key={"Ticker": ticker})
+            logging.info(f"🗑️ Deleted {ticker} due to missing CIK.")
+
+        logging.info("✅ CIK clean-up complete.")
+
+    except Exception as e:
+        logging.error(f"❌ Error during CIK clean-up: {e}")
+
+def clean_financials():
+    """Removes rows missing key financial data (Price, Market Cap, Revenue, Net Income, Net Cash)."""
+    try:
+        response = table.scan()
+        items = response.get("Items", [])
+
+        required_fields = ["Stock_Price", "Stock_Market_Cap", "Net_Income", "Revenue", "Net_Cash"]
+        rows_to_delete = [
+            item["Ticker"] for item in items
+            if any(item.get(field) is None for field in required_fields)
+        ]
+
+        for ticker in rows_to_delete:
+            table.delete_item(Key={"Ticker": ticker})
+            logging.info(f"🗑️ Deleted {ticker} due to missing financial data.")
+
+        logging.info("✅ Financial clean-up complete.")
+
+    except Exception as e:
+        logging.error(f"❌ Error during financial clean-up: {e}")
+
 
 def delete_column(column):
     """Delete a column from DynamoDB"""
