@@ -60,7 +60,3 @@ def delete_row(ticker):
         Key={"Ticker": ticker}  # Assuming "Ticker" is the primary key
     )
     print(f"✅ Deleted {ticker} from DynamoDB")
-
-# Example usage (if running locally)
-if __name__ == "__main__":
-    delete_column("Cash_Flow")

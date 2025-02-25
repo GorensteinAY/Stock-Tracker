@@ -69,6 +69,3 @@ def update_dynamodb():
 
         time.sleep(0.1)  # Respect SEC rate limit
 
-# Run the update
-if __name__ == "__main__":
-    update_dynamodb()

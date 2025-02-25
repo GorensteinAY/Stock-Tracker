@@ -47,6 +47,8 @@ def upload_csv_to_dynamodb(csv_file):
 
     print(f"✅ Upload complete: {total_uploaded} records added to DynamoDB.")
 
+"""
 # Run the function
 csv_filename = "Updated_Tickers.csv"  # Update with your actual CSV filename
 upload_csv_to_dynamodb(csv_filename)
+"""

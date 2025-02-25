@@ -52,7 +52,9 @@ def add_cik_to_csv(csv_file):
     except Exception as e:
         print(f"Error processing the CSV: {e}")
 
+"""
 # Run the function
 csv_filename = "Tickers.csv"  # Update with your file path
 add_cik_to_csv(csv_filename)
 
+"""
