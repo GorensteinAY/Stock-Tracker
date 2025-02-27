@@ -6,7 +6,7 @@ import boto3
 import time
 import decimal
 import logging
-from cik_lookup import *
+from get_cik import *
 from get_financials import get_latest_financials 
 from get_price import *
 
@@ -156,7 +156,7 @@ def update_dynamodb():
         update_cap(ticker = company["Ticker"])
         update_price(ticker = company["Ticker"])
         update_ratios(ticker = company["Ticker"])
-
+        print("Updated financials for",company["Ticker"])
         time.sleep(1)  # Respect rate limit
 
 """

@@ -2,7 +2,7 @@
 
 import time
 import pandas as pd
-from cik_lookup import get_cik_by_company_name, get_cik_by_ticker, load_sec_ticker_data
+from get_cik import *
 
 # Process the CSV file and update with CIKs
 def add_cik_to_csv(csv_file):
@@ -52,10 +52,9 @@ def add_cik_to_csv(csv_file):
     except Exception as e:
         print(f"Error processing the CSV: {e}")
 
-"""
+
 # Run manually
 if __name__ == "__main__":
     csv_filename = "Tickers.csv"  # Update with your file path
     add_cik_to_csv(csv_filename)
 
-"""

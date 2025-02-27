@@ -3,7 +3,7 @@ import pandas as pd
 import re  # To clean company names
 
 SEC_API_BASE_URL = "https://www.sec.gov/files/company_tickers.json"
-HEADERS = {"User-Agent":"agorenst@tepper.cmu.edu"}  # Replace with your contact info
+HEADERS = {"User-Agent":"agorenst@tepper.cmu.edu"} 
 
 # Load SEC ticker & company name data
 def load_sec_ticker_data():

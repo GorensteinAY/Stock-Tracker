@@ -1,6 +1,6 @@
 #get_financials_test.py
 
-from cik_lookup import *
+from get_cik import *
 from get_financials import *
 
 # Initialize CIK lookup

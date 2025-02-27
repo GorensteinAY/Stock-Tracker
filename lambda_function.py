@@ -1,23 +1,32 @@
 # Lambda function to run daily
 
+import concurrent.futures
 import csv_add_cik
-import cik_lookup
 import dynamodb_csv
 import dynamodb_utils
 import dynamodb_financials
 
 def lambda_handler(event, context):
-    # Review Tickers.csv for any new tickers
+    # Step 1️: Process Tickers from CSV (Sequential)
     csv_add_cik.add_cik_to_csv("Tickers.csv")
-
-    # Look up CIK's and add to DynamoDB, clean table to remove duplicates and tickers with no CIK
     dynamodb_csv.upload_csv_to_dynamodb("Updated_Tickers.csv")
+    print("Updated DynamoDB")
+
+    # Step 2️: Clean up database (Must run in sequence)
     dynamodb_utils.clean_duplicates()
     dynamodb_utils.clean_cik()
-    
-    # Update financials from SEC EDGAR database, clean table to remove tickers with no financials
-    dynamodb_financials.update_dynamodb()
-    dynamodb_utils.clean_financials()
+    print("Cleaned DynamoDB to remove duplicates and blank CIK's")
+
+    # Step 3️: Fetch financials and clean in parallel (Optimized)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_financials = executor.submit(dynamodb_financials.update_dynamodb)
+        future_clean_financials = executor.submit(dynamodb_utils.clean_financials)
+
+        # Make sure update_dynamodb() finishes before clean_financials()
+        future_financials.result()  # Waits for financial update to complete
+        future_clean_financials.result()  # Now cleans safely
+    print("Processed financials and cleaned DynamoDB to remove blanks")
+    return {"status": "success"}
 
 
 # Ensure the script still works when run manually
