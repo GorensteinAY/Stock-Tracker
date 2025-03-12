@@ -1,5 +1,8 @@
 import boto3
 import logging
+from decimal import Decimal
+from datetime import datetime
+from logger import logger, has_warnings_or_errors
 from collections import Counter
 from config import DYNAMODB_TABLE_NAME, AWS_REGION
 
@@ -117,6 +120,24 @@ def delete_row(ticker):
         Key={"Ticker": ticker}  # Assuming "Ticker" is the primary key
     )
     print(f"✅ Deleted {ticker} from DynamoDB")
+
+def update_time(ticker):
+    """Update the last updated timestamp in DynamoDB if no warnings/errors exist for the ticker."""
+    if has_warnings_or_errors(ticker):
+        logger.warning(f"⏳ Skipping timestamp update for {ticker} due to previous warnings/errors.")
+        return
+
+    timestamp = datetime.utcnow().isoformat()
+    
+    try:
+        table.update_item(
+            Key={"Ticker": ticker},
+            UpdateExpression="SET Updated = :u",
+            ExpressionAttributeValues={":u": timestamp},
+        )
+        logger.info(f"✅ Updated timestamp for {ticker}: {timestamp}")
+    except Exception as e:
+        logger.error(f"❌ Error updating timestamp for {ticker}: {str(e)}")
 
 """"
 # Run manually

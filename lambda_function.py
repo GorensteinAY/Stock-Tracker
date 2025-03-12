@@ -31,10 +31,10 @@ def lambda_handler(event, context):
         future_clean_financials.result()  # Now cleans safely
 
     """
-    
+
     dynamodb_financials.update_dynamodb()
     dynamodb_utils.clean_financials()
-    print("Processed financials and cleaned DynamoDB to remove blanks")
+    print("Processed DynamoDB")
     return {"status": "success"}
 
 

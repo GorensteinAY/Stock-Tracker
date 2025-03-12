@@ -9,6 +9,7 @@ import logging
 from get_cik import *
 from get_financials import get_latest_financials 
 from get_price import *
+from dynamodb_utils import update_time
 
 # AWS Config
 DYNAMODB_TABLE = "StockTickers"
@@ -54,7 +55,7 @@ def update_financials(ticker):
             ExpressionAttributeNames=expression_attribute_names
         )
 
-        logging.info(f"✅ Successfully updated financials for {ticker} (CIK {cik})")
+        logging.info(f"✅ Updated financials for {ticker} (CIK {cik})")
     
     except Exception as e:
         logging.error(f"❌ Error updating financials for {ticker}: {e}")
@@ -88,7 +89,7 @@ def update_cap(ticker):
     cap = get_market_cap(ticker)
     
     if cap is None:
-        logging.info(f"⚠️ Skipping update for {ticker}: No valid market cap found.")
+        logging.warning(f"⚠️ Skipping update for {ticker}: No valid market cap found.")
         return False
 
     try:
@@ -156,8 +157,8 @@ def update_dynamodb():
         update_cap(ticker = company["Ticker"])
         update_price(ticker = company["Ticker"])
         update_ratios(ticker = company["Ticker"])
-        print("Updated financials for",company["Ticker"])
-        time.sleep(1)  # Respect rate limit
+        update_time(ticker = company["Ticker"])
+        time.sleep(0.1)  # Respect rate limit
 
 """
 # Run manually
