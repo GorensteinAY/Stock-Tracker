@@ -7,6 +7,8 @@ import dynamodb_utils
 import dynamodb_financials
 
 def lambda_handler(event, context):
+    
+    """
     # Step 1️: Process Tickers from CSV (Sequential)
     csv_add_cik.add_cik_to_csv("Tickers.csv")
     dynamodb_csv.upload_csv_to_dynamodb("Updated_Tickers.csv")
@@ -16,6 +18,8 @@ def lambda_handler(event, context):
     dynamodb_utils.clean_duplicates()
     dynamodb_utils.clean_cik()
     print("Cleaned DynamoDB to remove duplicates and blank CIK's")
+    
+
 
     # Step 3️: Fetch financials and clean in parallel (Optimized)
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -25,6 +29,11 @@ def lambda_handler(event, context):
         # Make sure update_dynamodb() finishes before clean_financials()
         future_financials.result()  # Waits for financial update to complete
         future_clean_financials.result()  # Now cleans safely
+
+    """
+    
+    dynamodb_financials.update_dynamodb()
+    dynamodb_utils.clean_financials()
     print("Processed financials and cleaned DynamoDB to remove blanks")
     return {"status": "success"}
 
