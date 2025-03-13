@@ -3,9 +3,4 @@ requests
 pandas
 bs4
 edgartools
-csv
-time
-decimal
-logging
-json
 yfinance

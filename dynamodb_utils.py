@@ -135,7 +135,7 @@ def update_time(ticker):
             UpdateExpression="SET Updated = :u",
             ExpressionAttributeValues={":u": timestamp},
         )
-        logger.info(f"✅ Updated timestamp for {ticker}: {timestamp}")
+        logger.info(f"✅ Updated {ticker} timestamp: {timestamp}")
     except Exception as e:
         logger.error(f"❌ Error updating timestamp for {ticker}: {str(e)}")
 

@@ -139,7 +139,7 @@ def update_ratios(ticker):
             ExpressionAttributeValues=expression_values,
         )
 
-        logging.info(f"✅ Updated ratios for {ticker}: P/E={pe_ratio}, MC/NetCash={mc_net_cash_ratio}")
+        logging.info(f"✅ Updated {ticker} with P/E ratio {pe_ratio}, Market Cap / NetCash {mc_net_cash_ratio}")
 
     except Exception as e:
         logging.error(f"❌ Error calculating ratios for {ticker}: {e}")
@@ -158,7 +158,7 @@ def update_dynamodb():
         update_price(ticker = company["Ticker"])
         update_ratios(ticker = company["Ticker"])
         update_time(ticker = company["Ticker"])
-        time.sleep(0.1)  # Respect rate limit
+        time.sleep(1)  # Respect rate limit
 
 """
 # Run manually
